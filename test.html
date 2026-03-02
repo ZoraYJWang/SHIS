@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Somaliland HIS - Targeted Gradient Expansion</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { margin: 0; background: #000000; overflow: hidden; font-family: 'Inter', sans-serif; }
+        svg { width: 100vw; height: 100vh; }
+        
+        .region {
+            fill: rgba(0, 255, 204, 0);
+            stroke: rgba(0, 255, 204, 0.4);
+            stroke-width: 1px;
+        }
+
+        .node-1 { fill: #FF4500; filter: drop-shadow(0 0 15px #FF4500); }
+        .node-2 { fill: #FFD700; filter: drop-shadow(0 0 15px #FFD700); }
+        .node-3 { fill: #00FA9A; filter: drop-shadow(0 0 15px #00FA9A); }
+
+        .label { 
+            font-size: 12px; fill: #ffffff; font-weight: 700; 
+            pointer-events: none; text-shadow: 0px 0px 8px #000; 
+        }
+    </style>
+</head>
+<body>
+
+<svg id="map"></svg>
+
+<script>
+    const svg = d3.select("#map");
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // 紀錄已渲染的行政區
+    const renderedRegions = new Set();
+
+    // 醫院數據
+    const tier1 = [
+        { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
+        { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
+        { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+        { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
+        { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" }
+    ];
+
+    const tier2 = [
+        { name: "Sheikh General Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+        { name: "Salaxley District Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
+        { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" },
+        { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" }
+    ];
+
+    const tier3 = [
+        { name: "Las Anod General Hospital", coords: [47.3597, 8.4772], region: "Sool" },
+        { name: "Zeila Hospital", coords: [43.4731, 11.3488], region: "Awdal" },
+        { name: "Odweyne Hospital", coords: [45.0642, 9.4056], region: "Togdheer" },
+        { name: "Caynaba Hospital", coords: [46.4111, 9.4292], region: "Sool" },
+        { name: "Badhan Hospital", coords: [48.3511, 10.7125], region: "Sanaag" }
+    ];
+
+    d3.json("Regions.geojson").then(data => {
+        const projection = d3.geoEquirectangular().fitSize([width * 0.9, height * 0.9], data);
+        const path = d3.geoPath().projection(projection);
+        const defs = svg.append("defs");
+
+        // 繪製地圖
+        const regions = svg.append("g")
+            .selectAll("path")
+            .data(data.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "region")
+            .attr("id", d => "reg-" + (d.properties.NAM_1 || d.properties.NAME_1 || d.properties.admin_name).replace(/\s+/g, '-'))
+            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        const nodeGroup = svg.append("g")
+            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        function activateHIS(dataset, nodeClass, delayBase, isSimultaneous = false) {
+            dataset.forEach((d, i) => {
+                const nodeDelay = isSimultaneous ? delayBase : delayBase + i * 850;
+                const pos = projection(d.coords);
+                const regionCleanName = d.region.replace(/\s+/g, '-');
+
+                // 1. 醫院亮點
+                nodeGroup.append("circle")
+                    .attr("cx", pos[0]).attr("cy", pos[1]).attr("r", 0)
+                    .attr("class", nodeClass)
+                    .transition().delay(nodeDelay).duration(800).attr("r", 6);
+
+                nodeGroup.append("text")
+                    .attr("x", pos[0] + 12).attr("y", pos[1] + 5)
+                    .text(d.name).attr("class", "label")
+                    .style("opacity", 0)
+                    .transition().delay(nodeDelay + 400).duration(600).style("opacity", 1);
+
+                // 2. 漸層擴散渲染 (僅該區第一間醫院觸發)
+                if (!renderedRegions.has(d.region)) {
+                    renderedRegions.add(d.region);
+
+                    const gradId = "grad-" + regionCleanName;
+                    
+                    // 修正：計算醫院在行政區邊界框（Bounding Box）內的相對比例位置
+                    const regionElement = d3.select("#reg-" + regionCleanName).node();
+                    const bbox = regionElement.getBBox();
+                    const fx = ((pos[0] - bbox.x) / bbox.width) * 100;
+                    const fy = ((pos[1] - bbox.y) / bbox.height) * 100;
+
+                    const gradient = defs.append("radialGradient")
+                        .attr("id", gradId)
+                        .attr("cx", fx + "%")
+                        .attr("cy", fy + "%")
+                        .attr("r", "100%") // 確保覆蓋全區
+                        .attr("gradientUnits", "objectBoundingBox");
+
+                    gradient.append("stop").attr("offset", "0%").attr("stop-color", "rgba(0, 255, 204, 0.7)");
+                    gradient.append("stop").attr("offset", "100%").attr("stop-color", "rgba(0, 255, 204, 0.0)");
+
+                    // 執行擴散動畫
+                    d3.select("#reg-" + regionCleanName)
+                        .transition()
+                        .delay(nodeDelay + 800)
+                        .duration(3000)
+                        .style("fill", `url(#${gradId})`)
+                        .style("stroke", "rgba(255, 255, 255, 0.9)")
+                        .style("stroke-width", "2px")
+                        .on("end", function() {
+                            // 修正：渲染完成後轉為純色填滿
+                            d3.select(this)
+                                .transition()
+                                .duration(1000)
+                                .style("fill", "rgba(0, 255, 204, 0.4)");
+                        });
+                }
+            });
+        }
+
+        // 啟動排程
+        activateHIS(tier1, "node-1", 1000, false);
+        setTimeout(() => activateHIS(tier2, "node-2", 0, true), 7500);
+        setTimeout(() => activateHIS(tier3, "node-3", 0, true), 12000);
+    });
+</script>
+</body>
+</html>

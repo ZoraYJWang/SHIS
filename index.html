@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Somaliland HIS - Satellite High Contrast Overlay</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* 背景純黑，疊圖去背專用 */
+        body { margin: 0; background: #000000; overflow: hidden; font-family: 'Inter', sans-serif; }
+        svg { width: 100vw; height: 100vh; }
+        
+        /* 地圖邊框：增加線條粗細與外發光，防止被地形干擾 */
+        .region {
+            fill: rgba(0, 0, 0, 0);
+            stroke: rgba(0, 255, 204, 0.4);
+            stroke-width: 1.5px;
+            filter: drop-shadow(0 0 2px rgba(0, 255, 204, 0.5));
+            transition: all 2s ease;
+        }
+
+        /* 增強版區域渲染：提高不透明度 (0.15 -> 0.4) 與 亮度 */
+        .active-tier-1, .active-tier-2, .active-tier-3 { 
+            fill: rgba(0, 255, 204, 0.4) !important; /* 顯著增加顏色飽和度 */
+            stroke: rgba(255, 255, 255, 0.9) !important; /* 邊界改為白青色，極高對比 */
+            stroke-width: 2px !important;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 204, 0.8)) !important; /* 強烈發光 */
+        }
+       
+
+        /* 醫院亮點：強化核心光點，讓點位在衛星圖上像「燈火」一樣亮 */
+        .node-1 { fill: #FF4500; filter: drop-shadow(0 0 15px #FF4500) brightness(1.5); }
+        .node-2 { fill: #FFD700; filter: drop-shadow(0 0 15px #FFD700) brightness(1.5); }
+        .node-3 { fill: #00FA9A; filter: drop-shadow(0 0 15px #00FA9A) brightness(1.5); }
+
+        /* 激光特效：掃描感加強 */
+        .laser-flash {
+            fill: rgba(255, 255, 255, 0.6) !important;
+            filter: brightness(1.8) drop-shadow(0 0 25px #00ffcc) !important;
+        }
+
+        /* 標籤文字：增加黑色厚底陰影，確保在淡色沙地上也能看清 */
+        .label { 
+            font-size: 12px; 
+            fill: #ffffff; 
+            font-weight: 700; 
+            pointer-events: none; 
+            text-shadow: 0px 0px 8px #000, 0px 0px 12px #000; 
+        }
+    </style>
+</head>
+<body>
+
+<svg id="map"></svg>
+
+<script>
+    const svg = d3.select("#map");
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // 醫院數據
+    const tier1 = [
+        { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
+        { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
+        { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+        { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
+        { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" }
+    ];
+
+    const tier2 = [
+        { name: "Sheikh General Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+        { name: "Salaxley District Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
+        { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" },
+        { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" }
+    ];
+
+    const tier3 = [
+        { name: "Las Anod General Hospital", coords: [47.3597, 8.4772], region: "Sool" },
+        { name: "Zeila Hospital", coords: [43.4731, 11.3488], region: "Awdal" },
+        { name: "Odweyne Hospital", coords: [45.0642, 9.4056], region: "Togdheer" },
+        { name: "Caynaba Hospital", coords: [46.4111, 9.4292], region: "Sool" },
+        { name: "Badhan Hospital", coords: [48.3511, 10.7125], region: "Sanaag" }
+    ];
+
+    d3.json("Regions.geojson").then(data => {
+        // 使用 Equirectangular 投影對齊 Google Earth
+        const projection = d3.geoEquirectangular().fitSize([width * 0.9, height * 0.9], data);
+        const path = d3.geoPath().projection(projection);
+
+        const regions = svg.append("g")
+            .selectAll("path")
+            .data(data.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "region")
+            .attr("data-region", d => d.properties.NAM_1 || d.properties.NAME_1 || d.properties.admin_name)
+            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        const nodeGroup = svg.append("g")
+            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        function activateHIS(dataset, nodeClass, activeRegionClass, delayBase, isSimultaneous = false) {
+            dataset.forEach((d, i) => {
+                const nodeDelay = isSimultaneous ? delayBase : delayBase + i * 850;
+
+                nodeGroup.append("circle")
+                    .attr("cx", projection(d.coords)[0])
+                    .attr("cy", projection(d.coords)[1])
+                    .attr("r", 0)
+                    .attr("class", nodeClass)
+                    .transition().delay(nodeDelay).duration(1000).attr("r", 6); // 稍微放大點位
+
+                nodeGroup.append("text")
+                    .attr("x", projection(d.coords)[0] + 14)
+                    .attr("y", projection(d.coords)[1] + 5)
+                    .text(d.name)
+                    .attr("class", "label")
+                    .style("opacity", 0)
+                    .transition().delay(nodeDelay + 500).duration(800).style("opacity", 1);
+
+                const regionDelay = nodeDelay + 1200;
+                regions.filter(function() { return d3.select(this).attr("data-region") === d.region; })
+                    .transition().delay(regionDelay).duration(2000)
+                    .attr("class", function() { return d3.select(this).attr("class") + " " + activeRegionClass; });
+            });
+        }
+
+        activateHIS(tier1, "node-1", "active-tier-1", 1000, false);
+        setTimeout(() => activateHIS(tier2, "node-2", "active-tier-2", 0, true), 7000);
+        setTimeout(() => activateHIS(tier3, "node-3", "active-tier-3", 0, true), 11000);
+
+        setTimeout(() => {
+            regions.transition()
+                .duration(400)
+                .attr("class", function() { return d3.select(this).attr("class") + " laser-flash"; })
+                .transition()
+                .duration(1500)
+                .attr("class", function() { return d3.select(this).attr("class").replace("laser-flash", ""); });
+        }, 16000);
+
+    });
+</script>
+</body>
+</html>
