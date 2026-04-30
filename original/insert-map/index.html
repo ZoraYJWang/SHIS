@@ -95,6 +95,63 @@
             border: 1px solid rgba(0, 255, 204, 0.5);
             white-space: nowrap;
         }
+
+        .info-card {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            width: 280px;
+            max-height: 300px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-card-title {
+            color: #00ffcc;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+            padding-bottom: 8px;
+        }
+
+        .info-card-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-card-list li {
+            color: #ffffff;
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            line-height: 1.4;
+        }
+
+        .info-card-list li:last-child {
+            border-bottom: none;
+        }
+
+        .info-card-list li:hover {
+            background: rgba(0, 255, 204, 0.1);
+            padding-left: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .info-card-list li .region {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +164,10 @@
         <div class="tab" data-tier="2">2</div>
         <div class="tab" data-tier="3">3</div>
         <div class="tab" data-tier="all">All</div>
+    </div>
+    <div class="info-card">
+        <div class="info-card-title">Phase 1 Hospitals</div>
+        <ul class="info-card-list" id="hospital-list"></ul>
     </div>
 </div>
 
@@ -232,6 +293,44 @@
             });
             
             hospitalMarkers.push(marker);
+        });
+
+        // 更新資訊卡片
+        updateInfoCard(phase);
+    }
+
+    // --- 更新資訊卡片內容 ---
+    function updateInfoCard(phase) {
+        const titleElement = document.querySelector('.info-card-title');
+        const listElement = document.getElementById('hospital-list');
+        
+        // 更新標題
+        if (phase === 'all') {
+            titleElement.textContent = 'All Hospitals';
+        } else {
+            titleElement.textContent = `Phase ${phase} Hospitals`;
+        }
+        
+        // 清空列表
+        listElement.innerHTML = '';
+        
+        // 取得要顯示的醫院資料
+        let hospitalsToShow;
+        if (phase === 'all') {
+            hospitalsToShow = [
+                ...tierData[1].map(h => ({...h, phase: 1})),
+                ...tierData[2].map(h => ({...h, phase: 2})),
+                ...tierData[3].map(h => ({...h, phase: 3}))
+            ];
+        } else {
+            hospitalsToShow = tierData[phase];
+        }
+        
+        // 生成列表項目
+        hospitalsToShow.forEach(hospital => {
+            const li = document.createElement('li');
+            li.innerHTML = `${hospital.name}<span class="region">${hospital.region}</span>`;
+            listElement.appendChild(li);
         });
     }
 
