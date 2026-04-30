@@ -163,6 +163,7 @@
         <div class="tab active" data-tier="1">1</div>
         <div class="tab" data-tier="2">2</div>
         <div class="tab" data-tier="3">3</div>
+        <div class="tab" data-tier="4">4</div>
         <div class="tab" data-tier="all">All</div>
     </div>
     <div class="info-card">
@@ -176,8 +177,15 @@
     const tierData = {
         1: [
             { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
-            { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
             { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+            { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
+            { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
+            { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" },
+        ],
+        2: [
+            { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
+            { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+            { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
             { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
             { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" },
             { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" },
@@ -185,26 +193,28 @@
             { name: "Salahlay Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
             { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" }
         ],
-        2: [
+        3: [
+            { name: "ATU Daryeel Hospital", coords: [44.0333, 9.5500], region: "Maroodijeex" },
+            { name: "Al-khalifa Specialist Hospital Burao", coords: [45.5387, 9.5144] , region: "Togdheer" },
+            { name: "Ainabo Regional Hospital", coords: [ 46.4075,8.9579], region: "Sool"},
             { name: "Sheikh District Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+            { name: "Oodwayne General Hospital", coords: [45.0667, 9.4000], region: "Togdheer" },
+            { name: "Tog Wajaale City Hospital", coords: [43.4500, 9.5800], region: "Gabiley" },
+            { name: "Arabsiyo District Hospital", coords: [43.9000, 9.7000], region: "Gabiley" }
+        ],
+        4: [
             { name: "Lasanod Hospital", coords: [47.3633, 8.9833], region: "Sool" },
-            { name: "Odwayne Hospital", coords: [45.0667, 9.4000], region: "Togdheer" },
             { name: "Buhoodle Hospital", coords: [46.3274, 8.4500], region: "Sool" },
             { name: "Saylac Hospital", coords: [43.4500, 11.0000], region: "Salel" },
             { name: "Caynaba Hospital", coords: [44.7833, 10.3833], region: "Saraar" },
             { name: "Badhan Hospital", coords: [48.4833, 10.9833], region: "Badhan" },
-            { name: "Wajale Hospital", coords: [43.4500, 9.5800], region: "Gabiley" },
-            { name: "Arabsiyo District Hospital", coords: [43.9000, 9.7000], region: "Gabiley" }
-        ],
-        3: [
+            { name: "Dilla Hospital", coords: [43.3167, 10.0667], region: "Awdal" },
             { name: "Kalabaydh District Hospital", coords: [43.4760, 9.6740], region: "Gabiley" },
             { name: "Lughaya Hospital", coords: [43.2000, 10.7000], region: "Awdal" },
             { name: "Hariirad Hospital", coords: [43.4000, 10.9000], region: "Salel" },
-            { name: "Dilla Hospital", coords: [43.3167, 10.0667], region: "Awdal" },
             { name: "Sabawanaag Hospital", coords: [44.1333, 9.1000], region: "Maroodijeex" },
             { name: "Eel-Afweyn Hospital", coords: [47.2000, 9.9333], region: "Sanaag" },
             { name: "Dhahar Hospital", coords: [47.8167, 10.7833], region: "Sanaag" },
-            { name: "Daryeel Hospital", coords: [44.0333, 9.5500], region: "Maroodijeex" },
             { name: "Garbo Dadar Hospital", coords: [43.3833, 10.4833], region: "Awdal" },
             { name: "Widh Widh Hospital", coords: [46.4833, 8.8500], region: "Sool" },
             { name: "Awr Boogays Hospital", coords: [47.1667, 9.0667], region: "Sool" },
@@ -221,9 +231,10 @@
 
     // 定義各階層顏色對照表
     const phaseColors = {
-        1: { fill: '#10B981', stroke: '#ffffff' }, // 翠綠
-        2: { fill: '#06B6D4', stroke: '#ffffff' }, // 青色
-        3: { fill: '#9CA3AF', stroke: '#ffffff' }  // 灰
+        1:{ fill: '#FF6F61', stroke: '#ffffff' }, // 紅 
+        2:{ fill: '#10B981', stroke: '#ffffff' }, // 翠綠
+        3:{ fill: '#06B6D4', stroke: '#ffffff' }, // 青色
+        4:{ fill: '#9CA3AF', stroke: '#ffffff' }  // 灰
     };
 
     // --- 2. 初始化地圖與底圖 ---
@@ -260,7 +271,8 @@
             hospitalsToShow = [
                 ...tierData[1].map(h => ({...h, phase: 1})),
                 ...tierData[2].map(h => ({...h, phase: 2})),
-                ...tierData[3].map(h => ({...h, phase: 3}))
+                ...tierData[3].map(h => ({...h, phase: 3})),
+                ...tierData[4].map(h => ({...h, phase: 4}))
             ];
         } else {
             // 顯示特定階層的醫院
@@ -320,7 +332,8 @@
             hospitalsToShow = [
                 ...tierData[1].map(h => ({...h, phase: 1})),
                 ...tierData[2].map(h => ({...h, phase: 2})),
-                ...tierData[3].map(h => ({...h, phase: 3}))
+                ...tierData[3].map(h => ({...h, phase: 3})),
+                ...tierData[4].map(h => ({...h, phase: 4}))
             ];
         } else {
             hospitalsToShow = tierData[phase];
