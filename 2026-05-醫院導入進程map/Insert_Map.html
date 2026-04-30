@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Somaliland HIS - Interactive Map</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { 
+            margin: 0; 
+            background: #000000; 
+            font-family: 'Inter', sans-serif; 
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .tabs {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            border-radius: 8px;
+            padding: 5px;
+        }
+        
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #00ffcc;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab:hover {
+            background: rgba(0, 255, 204, 0.1);
+            border-color: rgba(0, 255, 204, 0.6);
+        }
+        
+        .tab.active {
+            background: rgba(0, 255, 204, 0.2);
+            border-color: rgba(0, 255, 204, 0.8);
+            color: #ffffff;
+        }
+        
+        .hospital-marker {
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .tier1 { background: #FF4500; }
+        .tier2 { background: #FFD700; }
+        .tier3 { background: #00FA9A; }
+        
+        .hospital-label {
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            white-space: nowrap;
+        }
+        
+        .region-boundary {
+            fill: rgba(0, 0, 0, 0);
+            stroke: rgba(0, 255, 204, 0.4);
+            stroke-width: 1.5px;
+        }
+        
+        .region-boundary.active {
+            fill: rgba(0, 255, 204, 0.2);
+            stroke: rgba(255, 255, 255, 0.9);
+            stroke-width: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map-container">
+    <div id="map"></div>
+    <div class="tabs">
+        <div class="tab active" data-tier="1">Tier 1 Hospitals</div>
+        <div class="tab" data-tier="2">Tier 2 Hospitals</div>
+        <div class="tab" data-tier="3">Tier 3 Hospitals</div>
+    </div>
+</div>
+
+<script>
+    // Hospital data from original file
+    const tier1 = [
+        { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
+        { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
+        { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+        { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
+        { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" }
+    ];
+
+    const tier2 = [
+        { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" },
+        { name: "MAS Children's Hospital", coords: [44.0575, 9.6226], region: "Woqooyi Galbeed" },
+        { name: "Sheikh District Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+        { name: "Salahlay Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
+        { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" }
+    ];
+
+    const tier3 = [
+        { name: "Lasanod Hospital", coords: [47.3633, 8.9833], region: "Sool" },
+        { name: "Odwayne Hospital", coords: [45.0667, 9.4000], region: "Togdheer" },
+        { name: "Buhoodle Hospital", coords: [46.3274, 8.4500], region: "Sool" },
+        { name: "Saylac Hospital", coords: [43.4500, 11.0000], region: "Salel" },
+        { name: "Caynaba Hospital", coords: [44.7833, 10.3833], region: "Saraar" },
+        { name: "Badhan Hospital", coords: [48.4833, 10.9833], region: "Badhan" },
+        { name: "Wajale Hospital", coords: [43.4500, 9.5800], region: "Gabiley" },
+        { name: "Arabsiyo District Hospital", coords: [43.9000, 9.7000], region: "Gabiley" },
+        { name: "Kalabaydh District Hospital", coords: [43.4760, 9.6740], region: "Gabiley" },
+        { name: "Lughaya Hospital", coords: [43.2000, 10.7000], region: "Awdal" },
+        { name: "Hariirad Hospital", coords: [43.4000, 10.9000], region: "Salel" },
+        { name: "Dilla Hospital", coords: [43.3167, 10.0667], region: "Awdal" },
+        { name: "Sabawanaag Hospital", coords: [44.1333, 9.1000], region: "Maroodijeex" },
+        { name: "Eel-Afweyn Hospital", coords: [47.2000, 9.9333], region: "Sanaag" },
+        { name: "Dhahar Hospital", coords: [47.8167, 10.7833], region: "Sanaag" },
+        { name: "Daryeel Hospital", coords: [44.0333, 9.5500], region: "Maroodijeex" },
+        { name: "Garbo Dadar Hospital", coords: [43.3833, 10.4833], region: "Awdal" },
+        { name: "Widh Widh Hospital", coords: [46.4833, 8.8500], region: "Sool" },
+        { name: "Awr Boogays Hospital", coords: [47.1667, 9.0667], region: "Sool" },
+        { name: "Mass Pediatric Hospital", coords: [44.0500, 9.6000], region: "Maroodijeex" },
+        { name: "Trauma and Orthopedic Hospital", coords: [45.0167, 10.4333], region: "Sahil" },
+        { name: "Burco Maternal and Child Health", coords: [45.5330, 9.5180], region: "Togdheer" },
+        { name: "Hargeisa TB Hospital", coords: [44.0333, 9.5500], region: "Maroodijeex" },
+        { name: "Gabiley TB Hospital", coords: [43.6210, 9.7000], region: "Gabiley" },
+        { name: "Mandhaye Hospital", coords: [45.5300, 9.5200], region: "Togdheer" },
+        { name: "Gabiley Mental Hospital", coords: [43.6260, 9.7050], region: "Gabiley" },
+        { name: "Borama Fistula Hospital", coords: [43.1833, 9.9333], region: "Awdal" }
+    ];
+
+    // Initialize map
+    const map = L.map('map').setView([9.5, 45.0], 7);
+    
+    // Add satellite tile layer with cloud imagery
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 18
+    }).addTo(map);
+    
+    // Add cloud overlay (using NASA GIBS for free cloud data)
+    L.tileLayer('https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&LAYERS=MODIS_Terra_TrueColor&VERSION=1.3.0&FORMAT=image/png&TRANSPARENT=TRUE&WIDTH=512&HEIGHT=512&CRS=EPSG:4326&STYLES=&BBOX={bbox}&TIME=2023-01-01', {
+        attribution: 'Imagery &copy; NASA GIBS',
+        opacity: 0.3,
+        bounds: [[-90, -180], [90, 180]]
+    }).addTo(map);
+
+    let hospitalMarkers = [];
+    let regionLayers = [];
+    let currentTier = 1;
+
+    // Load regions and create boundaries
+    fetch('../Regions.geojson')
+        .then(response => response.json())
+        .then(data => {
+            L.geoJSON(data, {
+                style: function(feature) {
+                    return {
+                        fillColor: 'transparent',
+                        weight: 1.5,
+                        opacity: 0.8,
+                        color: 'rgba(0, 255, 204, 0.4)',
+                        fillOpacity: 0
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    regionLayers.push({
+                        layer: layer,
+                        name: feature.properties.NAM_1 || feature.properties.NAME_1 || feature.properties.admin_name
+                    });
+                }
+            }).addTo(map);
+            
+            // Initialize with tier 1 hospitals
+            showHospitals(1);
+        })
+        .catch(error => {
+            console.error('Error loading regions:', error);
+            // Still show hospitals even if regions fail to load
+            showHospitals(1);
+        });
+
+    function showHospitals(tier) {
+        // Clear existing markers
+        hospitalMarkers.forEach(marker => map.removeLayer(marker));
+        hospitalMarkers = [];
+        
+        // Reset region styles
+        regionLayers.forEach(region => {
+            region.layer.setStyle({
+                fillColor: 'transparent',
+                weight: 1.5,
+                opacity: 0.8,
+                color: 'rgba(0, 255, 204, 0.4)',
+                fillOpacity: 0
+            });
+        });
+
+        let hospitals;
+        let markerClass;
+        
+        switch(tier) {
+            case 1:
+                hospitals = tier1;
+                markerClass = 'tier1';
+                break;
+            case 2:
+                hospitals = tier2;
+                markerClass = 'tier2';
+                break;
+            case 3:
+                hospitals = tier3;
+                markerClass = 'tier3';
+                break;
+        }
+
+        // Add hospital markers
+        hospitals.forEach(hospital => {
+            const marker = L.circleMarker([hospital.coords[1], hospital.coords[0]], {
+                radius: 8,
+                className: `hospital-marker ${markerClass}`,
+                fillOpacity: 0.8
+            }).addTo(map);
+            
+            marker.bindTooltip(hospital.name, {
+                permanent: false,
+                className: 'hospital-label',
+                direction: 'right',
+                offset: [10, 0]
+            });
+            
+            hospitalMarkers.push(marker);
+            
+            // Highlight corresponding region
+            const region = regionLayers.find(r => 
+                r.name && hospital.region && 
+                r.name.toLowerCase() === hospital.region.toLowerCase()
+            );
+            
+            if (region) {
+                region.layer.setStyle({
+                    fillColor: 'rgba(0, 255, 204, 0.2)',
+                    weight: 2,
+                    opacity: 1,
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fillOpacity: 0.2
+                });
+            }
+        });
+    }
+
+    // Tab click handlers
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding hospitals
+            const tier = parseInt(this.getAttribute('data-tier'));
+            currentTier = tier;
+            showHospitals(tier);
+        });
+    });
+</script>
+</body>
+</html>
