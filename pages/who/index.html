@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WHO Strategy Framework - Compact</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        :root {
+            /* 精準色碼 */
+            --so1-bg: #225288; 
+            --so2-bg: #4DA878; 
+            --so3-bg: #ED6B2D; 
+            --so4-bg: #4697D5;
+            --header-bg: #5a7da3;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body, html { 
+            margin: 0; padding: 0; 
+            height: 100vh; width: 100vw;
+            background: #0a0c10; color: #fff; 
+            overflow: hidden; /* 強制不出現捲軸 */
+            display: flex; align-items: center; justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* 畫面內縮與最大寬度限制 */
+        .dashboard {
+            height: 85vh; 
+            width: 95vw;
+            max-width: 1400px; 
+            display: flex;
+            flex-direction: column;   
+        }
+
+        .framework-grid {
+            flex: 1;
+            display: grid;
+            /* 欄位比例調整：Objectives, Arrow, Outcomes, Outputs, Policy, Arrow, Target */
+            grid-template-columns: 14% 3% 13% 33% 18% 3% 13%;
+            grid-template-rows: 25px repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .header {
+            background: var(--header-bg);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9rem; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .cell {
+            padding: 6px 10px; /* 縮減內部填充 */
+            font-size: 0.8rem; /* 字體微調以適應較小的方塊 */
+            line-height: 1.2; 
+            display: flex; flex-direction: column;
+            justify-content: center; position: relative;
+        }
+
+        /* Objective 方塊特殊佈局：SO標籤左上，內容置中 */
+        .obj-cell { 
+            text-align: center; 
+            align-items: center; 
+            justify-content: center;
+        }
+        
+        .so-label {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .so-icon { 
+            height: 65%; /* 圖片比例縮小 */
+            max-height: 70px; /* 強制限制最大高度 */
+            margin-bottom: 4px; 
+            object-fit: contain;
+        }
+
+        .so-desc {
+            font-size: 0.9rem;
+            line-height: 1.2;
+            font-weight: normal;
+            max-width: 95%;
+        }
+
+        /* 背景色指定 */
+        .row-so1 { background: var(--so1-bg); }
+        .row-so2 { background: var(--so2-bg); }
+        .row-so3 { background: var(--so3-bg); }
+        .row-so4 { background: var(--so4-bg); }
+
+        .arrow-cell { display: flex; justify-content: center; align-items: center; }
+        .arrow-svg { width: 18px; height: 18px; opacity: 0.7; }
+        .arrow-path { fill: none; stroke: white; stroke-width: 3; stroke-linecap: round; }
+
+        ul { padding-left: 12px; margin: 0; }
+        li { margin-bottom: 3px; }
+
+        /* 僅保留微光 Feedback */
+        .cell:hover { filter: brightness(1.1); transition: 0.2s; }
+
+        /* 讓 cell 可以承載光影效果 */
+        .cell {
+            position: relative;
+            overflow: hidden;
+            transition: filter 0.3s;
+        }
+
+        /* 發光特效層 */
+        .cell::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 200%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            opacity: 0; /* 預設隱藏 */
+        }
+
+        /* 觸發效果的類別 */
+        .active-glow::after {
+            animation: slide-glow 0.8s ease-in-out;
+        }
+
+        @keyframes slide-glow {
+            0% { opacity: 0; left: -100%; }
+            50% { opacity: 1; }
+            100% { opacity: 0; left: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<a href="../" class="nav-back">← Back to Home</a>
+
+<div class="dashboard">
+    <div class="framework-grid">
+        <div class="header">Objectives</div>
+        <div></div>
+        <div class="header">Outcomes</div>
+        <div class="header">Outputs</div>
+        <div class="header">Policy & Action</div>
+        <div></div>
+        <div class="header">Target impacts</div>
+
+        <div class="cell obj-cell row-so1">
+            <div class="so-label">SO1</div>
+            <img src="../assets/images/who/SO1.png" class="so-icon">
+            <div class="so-desc">Collaboration and knowledge transfer</div>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so1">Global alignment to address opportunities and challenges</div>
+        <div class="cell row-so1">
+            <ul>
+                <li>Global multi-stakeholder collaboration and partnership for impact established.</li>
+                <li>National framework for collaboration and capacity building established.</li>
+                <li>National information centres for disease surveillance established or strengthened.</li>
+            </ul>
+        </div>
+        <div class="cell row-so1">
+            <ul>
+                <p>Programs and projects</p>
+                <p>Collaborations, partnerships & networks</p>
+                <p>Coordination mechanisms</p>
+                <p>Guidance</p>
+            </ul>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so1">Increasingly appropriate and sustainable digital health ecosystem</div>
+
+        <div class="cell obj-cell row-so2">
+            <div class="so-label">SO2</div>
+            <img src="../assets/images/who/SO2.png" class="so-icon">
+            <div class="so-desc">Digital strategy implementation</div>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so2">Strategic vision and integrated action at the national level</div>
+        <div class="cell row-so2">
+            <ul>
+                <li>Innovative integration of digital technologies in national health strategies established</li>
+                <li>Prioritization & sustainable financial models identified and shared</li>
+                <li>Dynamic digital health maturity model developed and implemented</li>
+            </ul>
+        </div>
+        <div class="cell row-so2">
+            <ul>
+                <p>Legislation, policy and compliance</p>
+                <p>Strategy and investment</p>
+                <p>Infrastructure, services and applications workforce</p>
+                <p>Change management</p>
+            </ul>   
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so2">Cost-effective and efficient health systems and services</div>
+
+        <div class="cell obj-cell row-so3">
+            <div class="so-label">SO3</div>
+            <img src="../assets/images/who/SO3.png" class="so-icon">
+            <div class="so-desc">Digital health governance</div>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so3">Actions and investments based on informed decisions</div>
+        <div class="cell row-so3">
+            <ul>
+                <li>Global and national framework for governance of digital health is established</li>
+                <li>Global research agenda on digital health and frontier technology established</li>
+                <li>Guidelines and frameworks on key areas of digital transformation established</li>
+            </ul>
+        </div>
+        <div class="cell row-so3">
+            <ul>
+                <p>Technical and policy documents</p>
+                <p>Governance and capacity building</p>
+                <p>Scale and implementation</p>
+                <p>Knowledge exchange and learning</p>
+            </ul>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so3">Accelerated digitalization of the health and well-being sector</div>
+
+        <div class="cell obj-cell row-so4">
+            <div class="so-label">SO4</div>
+            <img src="../assets/images/who/SO4.png" class="so-icon">
+            <div class="so-desc">Human-centred health systems</div>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so4">People empowered to make healthy and health-enabling choices</div>
+        <div class="cell row-so4">
+            <ul>
+                <li>People placed at the centre of digital health transformation</li>
+                <li>Population health management improved</li>
+                <li>Digital health literacy skills and gender equality and health equity approaches strengthened</li>
+            </ul>
+        </div>
+        <div class="cell row-so4">
+            <ul>
+                <p>Individual and commu-nity health</p>
+                <p>Health and well-being</p>
+                <p>Systems and services</p>
+                <p>Capacity building activities</p>
+            </ul>
+        </div>
+        <div class="arrow-cell"><svg class="arrow-svg" viewBox="0 0 24 24"><path class="arrow-path" d="M5 12h14m-7-7 7 7-7 7"/></svg></div>
+        <div class="cell row-so4">Healthier populations</div>
+    </div>
+</div>
+</body>
+</html>
+
+<script>
+    function triggerSequentialGlow() {
+        const cells = document.querySelectorAll('.cell');
+        let index = 0;
+
+        function runSequence() {
+            if (index < cells.length) {
+                // 為當前 cell 加入發光類別
+                cells[index].classList.add('active-glow');
+                
+                // 800ms 後移除類別，準備給下一個
+                setTimeout(() => {
+                    cells[index].classList.remove('active-glow');
+                    index++;
+                    runSequence();
+                }, 400); // 調整此值可改變發光速度
+            } else {
+                // 一輪結束，重置並等待 2 秒後再次開始
+                index = 0;
+                setTimeout(runSequence, 2000); 
+            }
+        }
+
+        runSequence();
+    }
+
+    window.onload = triggerSequentialGlow;
+</script>

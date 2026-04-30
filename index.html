@@ -1,144 +1,109 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Somaliland HIS - Satellite High Contrast Overlay</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        /* 背景純黑，疊圖去背專用 */
-        body { margin: 0; background: #000000; overflow: hidden; font-family: 'Inter', sans-serif; }
-        svg { width: 100vw; height: 100vh; }
-        
-        /* 地圖邊框：增加線條粗細與外發光，防止被地形干擾 */
-        .region {
-            fill: rgba(0, 0, 0, 0);
-            stroke: rgba(0, 255, 204, 0.4);
-            stroke-width: 1.5px;
-            filter: drop-shadow(0 0 2px rgba(0, 255, 204, 0.5));
-            transition: all 2s ease;
-        }
-
-        /* 增強版區域渲染：提高不透明度 (0.15 -> 0.4) 與 亮度 */
-        .active-tier-1, .active-tier-2, .active-tier-3 { 
-            fill: rgba(0, 255, 204, 0.4) !important; /* 顯著增加顏色飽和度 */
-            stroke: rgba(255, 255, 255, 0.9) !important; /* 邊界改為白青色，極高對比 */
-            stroke-width: 2px !important;
-            filter: drop-shadow(0 0 15px rgba(0, 255, 204, 0.8)) !important; /* 強烈發光 */
-        }
-       
-
-        /* 醫院亮點：強化核心光點，讓點位在衛星圖上像「燈火」一樣亮 */
-        .node-1 { fill: #FF4500; filter: drop-shadow(0 0 15px #FF4500) brightness(1.5); }
-        .node-2 { fill: #FFD700; filter: drop-shadow(0 0 15px #FFD700) brightness(1.5); }
-        .node-3 { fill: #00FA9A; filter: drop-shadow(0 0 15px #00FA9A) brightness(1.5); }
-
-        /* 激光特效：掃描感加強 */
-        .laser-flash {
-            fill: rgba(255, 255, 255, 0.6) !important;
-            filter: brightness(1.8) drop-shadow(0 0 25px #00ffcc) !important;
-        }
-
-        /* 標籤文字：增加黑色厚底陰影，確保在淡色沙地上也能看清 */
-        .label { 
-            font-size: 12px; 
-            fill: #ffffff; 
-            font-weight: 700; 
-            pointer-events: none; 
-            text-shadow: 0px 0px 8px #000, 0px 0px 12px #000; 
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIS Visualization</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <header>
+        <div class="header-content">
+            <h1>SHIS Visualization</h1>
+            <p class="subtitle">Somaliland Health Information System - Interactive Data Visualization</p>
+        </div>
+    </header>
 
-<svg id="map"></svg>
+    <main>
+        <div class="intro">
+            <p>A collection of interactive visualizations exploring Somaliland's healthcare infrastructure, ICT development, and strategic health initiatives.</p>
+        </div>
 
-<script>
-    const svg = d3.select("#map");
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+        <div class="cards-grid">
+            <a href="original/ict/" class="card">
+                <div class="card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h2>ICT Ceremony</h2>
+                <p>Animated visualization of Somaliland's ICT infrastructure with particle effects and dynamic border animations.</p>
+                <span class="card-link">
+                    View ICT
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </a>
 
-    // 醫院數據
-    const tier1 = [
-        { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
-        { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
-        { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
-        { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
-        { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" }
-    ];
+            <a href="original/index2/" class="card">
+                <div class="card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                    </svg>
+                </div>
+                <h2>Index 2</h2>
+                <p>D3.js map visualization with fixed animation flow and tier-based hospital filtering.</p>
+                <span class="card-link">
+                    View Index 2
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </a>
 
-    const tier2 = [
-        { name: "Sheikh General Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
-        { name: "Salaxley District Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
-        { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" },
-        { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" }
-    ];
+            <a href="original/index3/" class="card">
+                <div class="card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h2>Index 3</h2>
+                <p>D3.js map visualization with enhanced features and tier-based hospital display.</p>
+                <span class="card-link">
+                    View Index 3
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </a>
 
-    const tier3 = [
-        { name: "Las Anod General Hospital", coords: [47.3597, 8.4772], region: "Sool" },
-        { name: "Zeila Hospital", coords: [43.4731, 11.3488], region: "Awdal" },
-        { name: "Odweyne Hospital", coords: [45.0642, 9.4056], region: "Togdheer" },
-        { name: "Caynaba Hospital", coords: [46.4111, 9.4292], region: "Sool" },
-        { name: "Badhan Hospital", coords: [48.3511, 10.7125], region: "Sanaag" }
-    ];
+            <a href="original/insert-map/" class="card">
+                <div class="card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                    </svg>
+                </div>
+                <h2>Insert Map</h2>
+                <p>Leaflet-based interactive map with hospital phase filtering, regional boundaries, and satellite imagery.</p>
+                <span class="card-link">
+                    View Insert Map
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </a>
 
-    d3.json("Regions.geojson").then(data => {
-        // 使用 Equirectangular 投影對齊 Google Earth
-        const projection = d3.geoEquirectangular().fitSize([width * 0.9, height * 0.9], data);
-        const path = d3.geoPath().projection(projection);
+            <a href="original/who/" class="card">
+                <div class="card-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                </div>
+                <h2>WHO Strategy Framework</h2>
+                <p>Interactive framework display showing WHO's strategic objectives, outcomes, and policy actions for digital health transformation.</p>
+                <span class="card-link">
+                    View WHO
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </a>
+        </div>
+    </main>
 
-        const regions = svg.append("g")
-            .selectAll("path")
-            .data(data.features)
-            .enter()
-            .append("path")
-            .attr("d", path)
-            .attr("class", "region")
-            .attr("data-region", d => d.properties.NAM_1 || d.properties.NAME_1 || d.properties.admin_name)
-            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
-
-        const nodeGroup = svg.append("g")
-            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
-
-        function activateHIS(dataset, nodeClass, activeRegionClass, delayBase, isSimultaneous = false) {
-            dataset.forEach((d, i) => {
-                const nodeDelay = isSimultaneous ? delayBase : delayBase + i * 850;
-
-                nodeGroup.append("circle")
-                    .attr("cx", projection(d.coords)[0])
-                    .attr("cy", projection(d.coords)[1])
-                    .attr("r", 0)
-                    .attr("class", nodeClass)
-                    .transition().delay(nodeDelay).duration(1000).attr("r", 6); // 稍微放大點位
-
-                nodeGroup.append("text")
-                    .attr("x", projection(d.coords)[0] + 14)
-                    .attr("y", projection(d.coords)[1] + 5)
-                    .text(d.name)
-                    .attr("class", "label")
-                    .style("opacity", 0)
-                    .transition().delay(nodeDelay + 500).duration(800).style("opacity", 1);
-
-                const regionDelay = nodeDelay + 1200;
-                regions.filter(function() { return d3.select(this).attr("data-region") === d.region; })
-                    .transition().delay(regionDelay).duration(2000)
-                    .attr("class", function() { return d3.select(this).attr("class") + " " + activeRegionClass; });
-            });
-        }
-
-        activateHIS(tier1, "node-1", "active-tier-1", 1000, false);
-        setTimeout(() => activateHIS(tier2, "node-2", "active-tier-2", 0, true), 7000);
-        setTimeout(() => activateHIS(tier3, "node-3", "active-tier-3", 0, true), 11000);
-
-        setTimeout(() => {
-            regions.transition()
-                .duration(400)
-                .attr("class", function() { return d3.select(this).attr("class") + " laser-flash"; })
-                .transition()
-                .duration(1500)
-                .attr("class", function() { return d3.select(this).attr("class").replace("laser-flash", ""); });
-        }, 16000);
-
-    });
-</script>
+    <footer>
+        <p>&copy; 2024 SHIS Visualization. All rights reserved.</p>
+    </footer>
 </body>
 </html>

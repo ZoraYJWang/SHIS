@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Somaliland ICT Top-Layer Border</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; background: #000000; overflow: hidden; }
+        #map { height: 100vh; width: 100%; background: #000; z-index: 1; }
+        #ict-canvas { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; pointer-events: none; 
+        }
+        /* 隱藏原本的 Leaflet 國界，改由 Canvas 繪製 */
+        .leaflet-interactive { display: none; }
+    </style>
+</head>
+<body>
+
+    <a href="../" class="nav-back">← Back to Home</a>
+
+    <div id="map"></div>
+    <canvas id="ict-canvas"></canvas> 
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    <script>
+        var map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([9.5, 46.0], 7);
+
+        var canvas = document.getElementById('ict-canvas');
+        var ctx = canvas.getContext('2d');
+        var particles = [];
+        var boundaryGeoJSON = null;
+        var dashOffset = 0; // 用於控制邊界電流跑動
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        fetch('../assets/data/somaliland.geojson')
+            .then(res => res.json())
+            .then(data => {
+                boundaryGeoJSON = data.features.reduce((acc, cur) => {
+                    return acc ? turf.union(acc, cur) : cur;
+                }, null);
+
+                // 初始化粒子
+                const bbox = turf.bbox(boundaryGeoJSON);
+                for (let i = 0; i < 300; i++) {
+                    particles.push(new ICTParticle(bbox));
+                }
+
+                animate();
+                map.fitBounds(L.geoJSON(boundaryGeoJSON).getBounds(), { padding: [80, 80] });
+            });
+
+        function ICTParticle(bbox) {
+            let point;
+            let safety = 0;
+            do {
+                this.lng = bbox[0] + Math.random() * (bbox[2] - bbox[0]);
+                this.lat = bbox[1] + Math.random() * (bbox[3] - bbox[1]);
+                point = turf.point([this.lng, this.lat]);
+                safety++;
+            } while (!turf.booleanPointInPolygon(point, boundaryGeoJSON) && safety < 100);
+
+            this.vLng = (Math.random() - 0.5) * 0.004;
+            this.vLat = (Math.random() - 0.5) * 0.004;
+            this.radius = Math.random() * 1.5 + 1;
+        }
+
+        ICTParticle.prototype.update = function() {
+            let nextLng = this.lng + this.vLng;
+            let nextLat = this.lat + this.vLat;
+            let nextPoint = turf.point([nextLng, nextLat]);
+
+            if (!turf.booleanPointInPolygon(nextPoint, boundaryGeoJSON)) {
+                this.vLng *= -1;
+                this.vLat *= -1;
+            } else {
+                this.lng = nextLng;
+                this.lat = nextLat;
+            }
+
+            let pixelPos = map.latLngToContainerPoint([this.lat, this.lng]);
+            ctx.beginPath();
+            ctx.arc(pixelPos.x, pixelPos.y, this.radius, 0, Math.PI * 2);
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#00f2fe";
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+        };
+
+        // 核心：在 Canvas 上繪製最頂層的國界
+        function drawTopBorder() {
+            if (!boundaryGeoJSON) return;
+
+            // 1. 取得座標並轉換為像素位置
+            let coords = boundaryGeoJSON.geometry.coordinates[0];
+            // 處理 MultiPolygon 結構
+            if (boundaryGeoJSON.geometry.type === "MultiPolygon") {
+                coords = boundaryGeoJSON.geometry.coordinates[0][0];
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            
+            coords.forEach((coord, i) => {
+                let p = map.latLngToContainerPoint([coord[1], coord[0]]);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.closePath();
+
+            // 2. 繪製底部深色填充 (在粒子下方，所以這部分會被殘影稍微蓋到，形成質感)
+            ctx.fillStyle = "rgba(0, 242, 254, 0.05)";
+            ctx.fill();
+
+            // 3. 繪製「電流跑動」輪廓線 (在最頂層)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00f2fe";
+            ctx.strokeStyle = "#00f2fe";
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            
+            // 模擬 CSS stroke-dasharray
+            ctx.setLineDash([100, 200]);
+            ctx.lineDashOffset = -dashOffset;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            dashOffset += 2; // 電流流動速度
+        }
+
+        function animate() {
+    // 1. 完全清除上一幀的所有內容，這會移除所有殘影
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 如果你希望背景保持純黑（不被 clearRect 變透明），也可以用這行：
+    // ctx.fillStyle = '#000000';
+    // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (boundaryGeoJSON) {
+        // 2. 先畫國界輪廓與電流（底層）
+        // 確保國界線條清晰且在粒子下方
+        drawTopBorder();
+
+        // 3. 再更新並繪製粒子（頂層）
+        // 粒子現在會是清晰的圓點，沒有尾巴
+        particles.forEach(p => p.update());
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// 為了讓粒子更清晰，建議在 ICTParticle.prototype.update 中微調：
+ICTParticle.prototype.update = function() {
+    let nextLng = this.lng + this.vLng;
+    let nextLat = this.lat + this.vLat;
+    let nextPoint = turf.point([nextLng, nextLat]);
+
+    if (!turf.booleanPointInPolygon(nextPoint, boundaryGeoJSON)) {
+        this.vLng *= -1;
+        this.vLat *= -1;
+    } else {
+        this.lng = nextLng;
+        this.lat = nextLat;
+    }
+
+    let pixelPos = map.latLngToContainerPoint([this.lat, this.lng]);
+    
+    ctx.save(); // 保護繪製狀態
+    ctx.beginPath();
+    ctx.arc(pixelPos.x, pixelPos.y, this.radius, 0, Math.PI * 2);
+    
+    // 強化單個粒子的發光感，彌補失去殘影後的視覺強度
+    ctx.shadowBlur = 12; 
+    ctx.shadowColor = "#00f2fe";
+    ctx.fillStyle = "#ffffff"; 
+    ctx.fill();
+    ctx.restore();
+};
+    </script>
+</body>
+</html>

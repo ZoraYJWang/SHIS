@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Somaliland HIS - Fixed Animation Flow</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { margin: 0; background: #000000; overflow: hidden; font-family: 'Inter', sans-serif; }
+        svg { width: 100vw; height: 100vh; }
+        
+        .region {
+            fill: rgba(0, 0, 0, 0);
+            stroke: rgba(0, 255, 204, 0.4);
+            stroke-width: 1.5px;
+            filter: drop-shadow(0 0 2px rgba(0, 255, 204, 0.5));
+            transition: all 2s ease;
+        }
+
+        /* 恢復原始顏色設定 */
+        .active-tier-1, .active-tier-2, .active-tier-3 { 
+            fill: rgba(0, 255, 204, 0.4) !important; 
+            stroke: rgba(255, 255, 255, 0.9) !important;
+            stroke-width: 2px !important;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 204, 0.8)) !important;
+        }
+
+        .node-1 { fill: #FF4500; filter: drop-shadow(0 0 15px #FF4500) brightness(1.5); }
+        .node-2 { fill: #FFD700; filter: drop-shadow(0 0 15px #FFD700) brightness(1.5); }
+        .node-3 { fill: #00FA9A; filter: drop-shadow(0 0 15px #00FA9A) brightness(1.5); }
+
+        .laser-flash {
+            fill: rgba(255, 255, 255, 0.6) !important;
+            filter: brightness(1.8) drop-shadow(0 0 25px #00ffcc) !important;
+        }
+
+        .label { 
+            font-size: 11px; fill: #ffffff; font-weight: 700; pointer-events: none; 
+            text-shadow: 0px 0px 8px #000, 0px 0px 12px #000; 
+        }
+    </style>
+</head>
+<body>
+
+<svg id="map"></svg>
+
+<script>
+    const svg = d3.select("#map");
+    const width = window.innerWidth, height = window.innerHeight;
+
+    function shuffle(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex != 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    const tier1 = [
+        { name: "Hargeisa Group Hospital", coords: [44.0573, 9.5606], region: "Woqooyi Galbeed" },
+        { name: "Burao General Hospital", coords: [45.5342, 9.5215], region: "Togdheer" },
+        { name: "Borama Regional Hospital", coords: [43.1843, 9.9361], region: "Awdal" },
+        { name: "Berbera Regional Hospital", coords: [45.0111, 10.4362], region: "Sahil" },
+        { name: "Erigavo General Hospital", coords: [47.3686, 10.6158], region: "Sanaag" }
+    ];
+
+    const tier2 = [
+        { name: "Sheikh General Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+        { name: "Salaxley District Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
+        { name: "Baligubadle District Hospital", coords: [43.8821, 9.1125], region: "Woqooyi Galbeed" },
+        { name: "Gabiley General Hospital", coords: [43.6235, 9.7025], region: "Woqooyi Galbeed" }
+    ];
+
+    const tier3 = [
+        { name: "Buhoodle Hospital", coords: [46.3333, 8.2500], region: "Sool" },
+        { name: "Saylac Hospital", coords: [43.4731, 11.3488], region: "Awdal" },
+        { name: "Caynaba Hospital", coords: [46.4111, 9.4292], region: "Sool" },
+        { name: "Badhan Hospital", coords: [48.3511, 10.7125], region: "Sanaag" },
+        { name: "Wajale Hospital", coords: [43.3289, 9.6014], region: "Awdal" },
+        { name: "Arabsiyo District Hospital", coords: [43.7667, 9.6833], region: "Woqooyi Galbeed" },
+        { name: "Kalabaydh District Hospital", coords: [43.4111, 9.2822], region: "Awdal" },
+        { name: "Lughaya Hospital", coords: [43.9372, 10.6908], region: "Awdal" },
+        { name: "Hariirad Hospital", coords: [43.0417, 10.3556], region: "Awdal" },
+        { name: "Dilla Hospital", coords: [43.4253, 9.7711], region: "Awdal" },
+        { name: "Salahlay Hospital", coords: [44.1524, 9.1895], region: "Woqooyi Galbeed" },
+        { name: "Sheikh District Hospital", coords: [45.1883, 9.9282], region: "Sahil" },
+        { name: "Sabawanaag Hospital", coords: [44.1333, 9.1333], region: "Woqooyi Galbeed" },
+        { name: "Eel-afweyn Hospital", coords: [47.2000, 9.9333], region: "Sanaag" },
+        { name: "Dhahar Hospital", coords: [48.8167, 10.3833], region: "Sanaag" },
+        { name: "Daryeel Hospital", coords: [44.0660, 9.5550], region: "Woqooyi Galbeed" },
+        { name: "Garbo Dadar Hospital", coords: [43.4000, 10.7333], region: "Awdal" },
+        { name: "Widh-widh Hospital", coords: [46.4833, 8.6833], region: "Sool" },
+        { name: "Awr Boogays Hospital", coords: [47.1667, 9.0667], region: "Sool" },
+        { name: "Mass Pediatric Hospital", coords: [44.0720, 9.5630], region: "Woqooyi Galbeed" },
+        { name: "Orthopedic Hospital", coords: [44.0500, 9.5400], region: "Woqooyi Galbeed" },
+        { name: "Burao Maternal and Child Health", coords: [45.5330, 9.5180], region: "Togdheer" },
+        { name: "Hargeisa TB Hospital", coords: [44.0450, 9.5680], region: "Woqooyi Galbeed" },
+        { name: "Gabiley TB Hospital", coords: [43.6210, 9.7000], region: "Woqooyi Galbeed" },
+        { name: "Mandhaye Hospital", coords: [44.0800, 9.5700], region: "Woqooyi Galbeed" },
+        { name: "Gabiley Mental Hospital", coords: [43.6260, 9.7050], region: "Woqooyi Galbeed" }
+    ];
+
+    d3.json("../../Regions.geojson").then(data => {
+        const projection = d3.geoEquirectangular().fitSize([width * 0.9, height * 0.9], data);
+        const path = d3.geoPath().projection(projection);
+
+        const regions = svg.append("g")
+            .selectAll("path")
+            .data(data.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "region")
+            .attr("data-region", d => d.properties.NAM_1 || d.properties.NAME_1 || d.properties.admin_name)
+            .attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        const nodeGroup = svg.append("g").attr("transform", `translate(${width*0.05}, ${height*0.05})`);
+
+        function activateHIS(dataset, nodeClass, activeRegionClass, delayBase, isSimultaneous, interval = 850) {
+            dataset.forEach((d, i) => {
+                const nodeDelay = isSimultaneous ? delayBase : delayBase + i * interval;
+
+                // 點動畫
+                nodeGroup.append("circle")
+                    .attr("cx", projection(d.coords)[0])
+                    .attr("cy", projection(d.coords)[1])
+                    .attr("r", 0)
+                    .attr("class", nodeClass)
+                    .transition().delay(nodeDelay).duration(1000).attr("r", 6);
+
+                // 文字動畫
+                nodeGroup.append("text")
+                    .attr("x", projection(d.coords)[0] + 14)
+                    .attr("y", i % 2 === 0 ? projection(d.coords)[1] - 5 : projection(d.coords)[1] + 15)
+                    .text(d.name).attr("class", "label").style("opacity", 0)
+                    .transition().delay(nodeDelay + 500).duration(800).style("opacity", 1);
+
+                // 區域變色
+                const regionDelay = nodeDelay + 800;
+                regions.filter(function() { return d3.select(this).attr("data-region") === d.region; })
+                    .transition().delay(regionDelay).duration(2000)
+                    .on("start", function() { d3.select(this).classed(activeRegionClass, true); });
+            });
+        }
+
+        // --- 執行順序 ---
+        // 1. D1: 逐一出現 (每 850ms)
+        activateHIS(tier1, "node-1", "active-tier-1", 1000, false, 850);
+
+        // 2. D2: 同時出現 (8.5秒處)
+        setTimeout(() => activateHIS(tier2, "node-2", "active-tier-2", 0, true), 8500);
+
+        // 3. D3: 隨機且逐一出現 (13秒處，間隔縮短至 150ms 營造爆發感)
+        setTimeout(() => {
+            activateHIS(shuffle([...tier3]), "node-3", "active-tier-3", 0, false, 150);
+        }, 13000);
+
+        // 4. 最終 100% 激光感閃爍
+        setTimeout(() => {
+            regions.transition().duration(500)
+                .on("start", function() { d3.select(this).classed("active-tier-3", true); })
+                .transition().duration(400)
+                .on("start", function() { d3.select(this).classed("laser-flash", true); })
+                .transition().duration(1500)
+                .on("start", function() { d3.select(this).classed("laser-flash", false); });
+        }, 17500);
+
+    });
+</script>
+</body>
+</html>
