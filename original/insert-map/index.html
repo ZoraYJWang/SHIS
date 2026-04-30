@@ -269,10 +269,10 @@
         if (phase === 'all') {
             // 顯示所有階層的醫院
             hospitalsToShow = [
-                ...tierData[1].map(h => ({...h, phase: 1})),
-                ...tierData[2].map(h => ({...h, phase: 2})),
+                ...tierData[4].map(h => ({...h, phase: 4})),
                 ...tierData[3].map(h => ({...h, phase: 3})),
-                ...tierData[4].map(h => ({...h, phase: 4}))
+                ...tierData[2].map(h => ({...h, phase: 2})),
+                ...tierData[1].map(h => ({...h, phase: 1}))
             ];
         } else {
             // 顯示特定階層的醫院
