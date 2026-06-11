@@ -348,7 +348,7 @@
 
     // --- 4. 載入區域邊界 GeoJSON ---
     // 注意：請確保路徑正確。如果檔案在同一層，改為 './Regions.geojson'
-    fetch('../../Regions.geojson')
+    fetch('./Regions.geojson')
         .then(response => {
             if (!response.ok) throw new Error('GeoJSON load failed');
             return response.json();
